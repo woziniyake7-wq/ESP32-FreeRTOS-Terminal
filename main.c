@@ -16,8 +16,8 @@
 static const char *TAG = "APP_MAIN";
 
 // ----------------- [ 系统参数与硬件配置 ] -----------------
-#define BOARD_STATUS_LED_GPIO   GPIO_NUM_2  // 板载状态指示灯 GPIO 编号
-static float s_target_temperature = 26.0f;  // 目标控制温度 (℃)
+#define BOARD_STATUS_LED_GPIO   GPIO_NUM_2  
+static float s_target_temperature = 26.0f;  
 
 // ----------------- [ 硬件抽象与 Stub 接口 ] -----------------
 
@@ -26,7 +26,6 @@ static float s_target_temperature = 26.0f;  // 目标控制温度 (℃)
  */
 static esp_err_t sensor_hardware_init(void) {
     ESP_LOGI(TAG, "Initializing hardware sensors...");
-    // TODO: 实现真实 I2C/SPI 外设总线初始化与握手逻辑
     vTaskDelay(pdMS_TO_TICKS(100)); 
     return ESP_OK;
 }
@@ -70,7 +69,6 @@ static void vSensorProcessTask(void *pvParameters) {
     while (1) {
         current_temp = sensor_read_temperature();
 
-        // 滞后控制逻辑 (Hysteresis Control)
         if (current_temp > s_target_temperature + 1.0f) {
             ESP_LOGW(TAG, "Temperature high (%.1f C > %.1f C). Triggering active cooling.", 
                      current_temp, s_target_temperature);
@@ -80,7 +78,7 @@ static void vSensorProcessTask(void *pvParameters) {
             gpio_set_level(BOARD_STATUS_LED_GPIO, 0);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(2000)); // 2000ms 采样周期
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
 
@@ -110,7 +108,6 @@ void app_main(void) {
     ESP_LOGI(TAG, "  ESP32 Terminal Core System Initializing...  ");
     ESP_LOGI(TAG, "============================================");
 
-    // NVS 非易失性存储初始化
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_LOGW(TAG, "NVS partition truncated/corrupted, erasing...");
@@ -120,7 +117,6 @@ void app_main(void) {
     ESP_ERROR_CHECK(ret);
     ESP_LOGI(TAG, "NVS storage initialized successfully.");
 
-    // 创建 FreeRTOS 任务
     xTaskCreatePinnedToCore(
         vSensorProcessTask, 
         "Task_Sensor", 
